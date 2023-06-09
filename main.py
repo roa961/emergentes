@@ -1,15 +1,113 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session, Response
 import iot_controller 
-
+import random
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'iot'
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    rest = iot_controller.get_user_pass(username, password)
+    if rest == 1:
+         session['username'] = username
+         return jsonify({'message': 'Sesión de ' + username + ' iniciada!'})
+    elif rest == 0:
+        return jsonify({'message': 'Credenciales inválidas'})
+    
+@app.route('/profile')
+def profile():
+    if 'username' in session:
+        return True
+    else:
+        return False
+
+## Company CRUD
+
+#Create company
+@app.route('/create-company', methods=["POST"])
+def create_company():
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    data = request.get_json()
+
+    Id = str(random.randint(1000,9999))
+    company_name = data.get('company_name')
+    company_api_key = Id + company_name + str(random.randint(1000,9999))
+    try:
+        iot_controller.company_create(company_name, company_api_key)
+        return jsonify({"Company key": company_api_key})
+
+    except:
+        return Response("{'a':'b'}", status=400, mimetype='application/json')
+    
+#Get all companies
+@app.route('/getCompany', methods=["GET"])
+def get_company():
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    companies = iot_controller.get_all_company()
+    return jsonify(companies)
+
+#Get one company
+@app.route('/getOneCompany', methods=["GET"])
+def get_one_company():
+    company_key = request.args.get('key')
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    company = iot_controller.get_one_company(company_key)
+    return jsonify(company)
+
+#edit company name
+@app.route('/editCompany', methods=["PUT"])
+def edit_company():
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    company_key = request.args.get('key')
+    data = request.get_json()
+    new_company = data.get('company_name')
+    iot_controller.edit_one_company(new_company, company_key)
+    return jsonify({"Company key": new_company})
+
+@app.route('/editCompany', methods=["DELETE"])
+def delete_company():
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    company_key = request.args.get('key')
+    data = request.get_json()
+    delete = data.get('company_name')
+    iot_controller.del_company(delete, company_key)
+    return jsonify({"Company key": "borrado"})
+
+
+##Location CRUD
 @app.route('/location', methods=["GET"])
 def get_location():
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
     locations = iot_controller.get_all_location()
-    return jsonify(locations)
+    return jsonify("asfdf")
+
+@app.route('/location_one', methods=["GET"])
+def get_one_location():
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    company_key = request.args.get('key')
+    location_one = iot_controller.get_one_location(company_key)
+    return jsonify(location_one)
+
+
+
+
+
+
+
+
 
 @app.route('/sensor', methods=["GET"])
 def get_sensor():
     sensors = iot_controller.get_all_sensor()
     return jsonify(sensors)
-
 
