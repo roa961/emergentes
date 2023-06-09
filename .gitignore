@@ -3,4 +3,5 @@ bin
 lib
 db
 pyvenv.cfg
-
+__pycache__/
+*.pyc
