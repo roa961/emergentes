@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, request, session, Response
+from flask import Flask, jsonify, request, session, Response, json
+import time 
 import iot_controller 
 import random
 app = Flask(__name__)
@@ -23,6 +24,10 @@ def profile():
         return True
     else:
         return False
+    
+
+###################
+
 
 ## Company CRUD
 
@@ -82,6 +87,8 @@ def delete_company():
     iot_controller.del_company(delete, company_key)
     return jsonify({"Company key": "borrado"})
 
+###################
+
 
 ##Location CRUD
 
@@ -115,10 +122,12 @@ def get_location():
 #Get one location
 @app.route('/getlocation_one', methods=["GET"])
 def get_one_location():
+    data = request.get_json()
+    location_name = data.get('location_name')
     if not profile():
         return jsonify({'message': 'Necesitas iniciar sesión'})
     company_key = request.args.get('key')
-    location_one = iot_controller.get_one_location(company_key)
+    location_one = iot_controller.get_one_location(company_key, location_name)
     return jsonify(location_one)
 
 #Edit location
@@ -137,11 +146,108 @@ def edit_location():
     iot_controller.edit_location(company_key, location_name, location_country, location_city, location_meta)
     return jsonify({"Company key": new_company})
 
+#Delete location
+@app.route('/deleteLocation', methods=["DELETE"])
+def delete_location():
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    company_key = request.args.get('key')
+    data = request.get_json()
+    delete = data.get('location_name')
+    iot_controller.del_location(delete, company_key)
+    return jsonify({"Company id": "borrado"})
+
+###################
 
 
+##Sensor CRUD
 
+#Create sensor
+@app.route('/create-location', methods=["POST"])
+def create_sensor():
+    data = request.get_json()
+    location_name = data.get('location_name')
+    sensor_name = data.get('sensor_name')
+    sensor_category = data.get('sensor_category')
+    sensor_meta = data.get('sensor_meta')
+
+    Id = str(random.randint(1000,9999))
+    sensor_name = data.get('sensor_name')
+    sensor_api_key = Id + sensor_name + str(random.randint(1000,9999))
+    
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    company_key = request.args.get('key')
+    try:
+        iot_controller.location_create(location_name, company_key, sensor_name, sensor_category, sensor_meta, sensor_api_key, company_key)
+        return jsonify({"sensor key": sensor_api_key})
+
+    except:
+        return Response("{'a':'b'}", status=400, mimetype='application/json')
+
+#Get  all sensors
 @app.route('/sensor', methods=["GET"])
 def get_sensor():
     sensors = iot_controller.get_all_sensor()
     return jsonify(sensors)
 
+
+### Get one
+@app.route('/sensorOne', methods=["GET"])
+def get_sensor_one():
+    data = request.get_json()
+    sensor_name = data.get('sensor_name')
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    company_key = request.args.get('key')
+    sensors = iot_controller.get_one_sensor(company_key, sensor_name)
+    return jsonify(sensors)
+
+#Edit Sensor
+@app.route('/editSensor', methods=["PUT"])
+def edit_sensor():
+    data = request.get_json()
+    sensor_name = data.get('sensor_name')
+    sensor_category = data.get('sensor_category')
+    sensor_meta = data.get('sensor_meta')
+
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    company_key = request.args.get('key')
+    data = request.get_json()
+    new_company = data.get('company_name')
+    iot_controller.edit_sensor(company_key, sensor_name, sensor_category, sensor_meta)
+    return jsonify({"Company key": new_company})
+
+#Delete sensor
+@app.route('/deleteSensor', methods=["DELETE"])
+def delete_sensor():
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    company_key = request.args.get('key')
+    data = request.get_json()
+    sensor_name = data.get('sensor_name')
+    location_name = data.get('location_name')
+    iot_controller.del_sensor(sensor_name, location_name, company_key)
+    return jsonify({"Company id": "borrado"})
+
+##Sensor data
+
+###Create
+@app.route('/api/v1/sensor_data', methods=["POST"])
+def post_sensor_data_temper():
+    sensor_api_key = request.args.get('key')
+    data = request.get_json()
+    epoch_time = int(time.time())
+    jsonData = json.dumps(data)
+    sensors = iot_controller.post_sensor(sensor_api_key, jsonData, epoch_time)
+    return jsonify(sensors)
+
+@app.route('/api/v1/sensor_data', methods=["GET"])
+def get_sensor_data():
+    company_key = request.args.get('key')
+    from_time = request.args.get('from')
+    to_time = request.args.get('to')
+    sensor_id = request.args.get('sensor_id')
+    sensors = iot_controller.get_sensor(company_key, from_time, to_time, eval(sensor_id) )
+    return jsonify(sensors)

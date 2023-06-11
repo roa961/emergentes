@@ -1,5 +1,7 @@
 from db import connect_db
 from db import create_tables
+from flask import Flask, jsonify, request, session, Response, json
+
 
 create_tables()
 
@@ -64,10 +66,10 @@ def get_all_location():
     cursor.execute("""SELECT * FROM location""")
     return cursor.fetchall()
 
-def get_one_location(company_key):
+def get_one_location(company_key, location_name):
     db = connect_db()
     cursor = db.cursor()
-    cursor.execute("""SELECT location.ID, location.company_id int, location.location_name, location_country, location_city, location_meta FROM location, company where company_api_key = ? """, (company_key,))
+    cursor.execute("""SELECT location.ID, location.company_id int, location.location_name, location_country, location_city, location_meta FROM location, company where company_api_key = ? and company.ID = location.company_id and location.location_name = ? """, (company_key, location_name))
     return cursor.fetchall()
 
 def edit_location(key, name, country, city, meta):
@@ -81,6 +83,28 @@ def edit_location(key, name, country, city, meta):
     except:
         print("no editado")
 
+def del_location(location_name, key):
+    db = connect_db()
+    cursor = db.cursor()
+    try:
+        print(location_name)
+        company_id = cursor.execute("""SELECT company.id FROM company where company_api_key = ? """, (key,)).fetchone()[0]
+        print(company_id)
+        cursor.execute("""delete from location where company_id = ? and location_name = ?""",(str(company_id), location_name))
+        db.commit()
+        return cursor.fetchall()
+    except:
+        print("no borrado")
+
+
+def sensor_create(location_name, company_key, sensor_name, sensor_category, sensor_meta, sensor_key):
+    db = connect_db()
+    cursor = db.cursor()
+    location_id = cursor.execute("""SELECT location.id FROM location where company_api_key = ? and location_name = ?""" , (company_key, location_name)).fetchone()[0]
+    print(location_id)
+    cursor.execute("insert into sensor(location_id, sensor_name, sensor_category, sensor_meta, sensor_api_key ) values(?,?,?,?,?) ",(location_id, sensor_name, sensor_category, sensor_meta, sensor_key))
+    db.commit()
+    return cursor.fetchone()[0]
 
 
 
@@ -90,14 +114,54 @@ def get_all_sensor():
     cursor.execute("""SELECT * FROM sensor""")
     return cursor.fetchall()
 
-def get_all_sensor():
+def get_one_sensor(company_key, sensor_name):
     db = connect_db()
     cursor = db.cursor()
-    cursor.execute("""SELECT * FROM sensor""")
+    cursor.execute("""SELECT * FROM sensor where sensor_name = ?  """, (sensor_name,))
     return cursor.fetchall()
 
-def get_all_sensor_data():
+
+def edit_sensor(company_key, sensor_name, sensor_category, sensor_meta):
     db = connect_db()
     cursor = db.cursor()
-    cursor.execute("""SELECT * FROM sensor_data""")
+    try:
+        sensor_id = cursor.execute("""SELECT sensor.id FROM sensor where sensor_name = ? """, (sensor_name,)).fetchone()[0] 
+        cursor.execute("""UPDATE SENSOR SET sensor_name = ?, sensor_category = ?, sensor_meta = ? where sensor_id = ? """,(sensor_name, sensor_category, sensor_meta, sensor_id))
+        db.commit()
+        return cursor.fetchall()
+    except:
+        print("no editado")
+
+
+def del_sensor(sensor_name, location_name, key):
+    db = connect_db()
+    cursor = db.cursor()
+    try:
+        company_id = cursor.execute("""SELECT company.id FROM company where company_api_key = ? """, (key,)).fetchone()[0]
+        location_id = cursor.execute("""SELECT location_id from location, company where location_name = ? and company_id = ?  """, (location_name, company_id)).fetchone()[0]
+        print(location_id)
+        cursor.execute("""delete from sensor where location_id = ? sensor_name = ?""",( location_id, sensor_name ))
+        db.commit()
+        return cursor.fetchall()
+    except:
+        print("no borrado")
+
+
+def post_sensor(sensor_api_key, datos, epoch_time):
+    db = connect_db()
+    cursor = db.cursor()
+    cursor.execute("insert into sensor_data(sensor_api_key, json_data, time) values(?,?,?) ",(sensor_api_key, datos, str(epoch_time)))
+    db.commit()
+
+    return cursor.fetchall()
+
+def get_sensor(company_key, from_time, to_time, sensor_id ):
+    db = connect_db()
+    cursor = db.cursor()
+    print(from_time)
+    evaluar = cursor.execute("SELECT CASE WHEN EXISTS (SELECT *  FROM company where ID = ? ) THEN 1 ELSE 0 END AS BIT",(company_key,))
+   
+    cursor.execute("select sensor_data.json_data from sensor, sensor_data where sensor.sensor_api_key = sensor_data.sensor_api_key and sensor.sensor_id = ? or ensor.sensor_id = ? and from_t >= ? and to_t <= ?",(sensor_id[0], from_time, to_time,))
+    #db.commit()
+
     return cursor.fetchall()
