@@ -42,8 +42,7 @@ def create_tables():
 """CREATE TABLE IF NOT EXISTS sensor_data(
     sensor_api_key string,
     json_data text,
-    from_t string,
-    to_t string,
+    time string,
     foreign key(sensor_api_key) references sensor(sensor_api_key)
 )"""
 
