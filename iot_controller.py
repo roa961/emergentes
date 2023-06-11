@@ -48,6 +48,16 @@ def get_user_pass(user, passw):
     cursor.execute("""SELECT CASE WHEN EXISTS (SELECT *  FROM admin where username = ? and password = ?) THEN 1 ELSE 0 END AS BIT""", (user, passw ))
     return cursor.fetchone()[0]
 
+def location_create(key, name, country, city, meta):
+    db = connect_db()
+    cursor = db.cursor()
+    company_id = cursor.execute("""SELECT company.id FROM company where company_api_key = ? """, (key,)).fetchone()[0]
+    print(company_id)
+    cursor.execute("insert into location(company_id, location_name, location_country, location_city, location_meta ) values(?,?,?,?,?) ",(company_id, name, country, city, meta))
+    db.commit()
+    return cursor.fetchone()[0]
+
+
 def get_all_location():
     db = connect_db()
     cursor = db.cursor()
@@ -59,6 +69,20 @@ def get_one_location(company_key):
     cursor = db.cursor()
     cursor.execute("""SELECT location.ID, location.company_id int, location.location_name, location_country, location_city, location_meta FROM location, company where company_api_key = ? """, (company_key,))
     return cursor.fetchall()
+
+def edit_location(key, name, country, city, meta):
+    db = connect_db()
+    cursor = db.cursor()
+    try:
+        company_id = cursor.execute("""SELECT company.id FROM company where company_api_key = ? """, (key,)).fetchone()[0] 
+        cursor.execute("""UPDATE location SET location_name = ?, location_country = ?, location_city = ?, location_meta = ? where company_id = ? """,(name, country, city, meta, company_id))
+        db.commit()
+        return cursor.fetchall()
+    except:
+        print("no editado")
+
+
+
 
 def get_all_sensor():
     db = connect_db()

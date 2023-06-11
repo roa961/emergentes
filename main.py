@@ -71,7 +71,8 @@ def edit_company():
     iot_controller.edit_one_company(new_company, company_key)
     return jsonify({"Company key": new_company})
 
-@app.route('/editCompany', methods=["DELETE"])
+#Delete company
+@app.route('/deleteCompany', methods=["DELETE"])
 def delete_company():
     if not profile():
         return jsonify({'message': 'Necesitas iniciar sesión'})
@@ -83,14 +84,36 @@ def delete_company():
 
 
 ##Location CRUD
-@app.route('/location', methods=["GET"])
+
+#Create location
+@app.route('/create-location', methods=["POST"])
+def create_location():
+    data = request.get_json()
+    location_name = data.get('location_name')
+    location_country = data.get('location_country')
+    location_city = data.get('location_city')
+    location_meta = data.get('location_meta')
+    
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    company_key = request.args.get('key')
+    try:
+        iot_controller.location_create(company_key, location_name, location_country, location_city, location_meta)
+        return jsonify({"Company key": company_key})
+
+    except:
+        return Response("{'a':'b'}", status=400, mimetype='application/json')
+
+#Get location
+@app.route('/getlocation', methods=["GET"])
 def get_location():
     if not profile():
         return jsonify({'message': 'Necesitas iniciar sesión'})
     locations = iot_controller.get_all_location()
-    return jsonify("asfdf")
+    return jsonify(locations)
 
-@app.route('/location_one', methods=["GET"])
+#Get one location
+@app.route('/getlocation_one', methods=["GET"])
 def get_one_location():
     if not profile():
         return jsonify({'message': 'Necesitas iniciar sesión'})
@@ -98,10 +121,21 @@ def get_one_location():
     location_one = iot_controller.get_one_location(company_key)
     return jsonify(location_one)
 
-
-
-
-
+#Edit location
+@app.route('/editLocation', methods=["PUT"])
+def edit_location():
+    data = request.get_json()
+    location_name = data.get('location_name')
+    location_country = data.get('location_country')
+    location_city = data.get('location_city')
+    location_meta = data.get('location_meta')
+    if not profile():
+        return jsonify({'message': 'Necesitas iniciar sesión'})
+    company_key = request.args.get('key')
+    data = request.get_json()
+    new_company = data.get('company_name')
+    iot_controller.edit_location(company_key, location_name, location_country, location_city, location_meta)
+    return jsonify({"Company key": new_company})
 
 
 
