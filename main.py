@@ -106,7 +106,7 @@ def create_location():
     company_key = request.args.get('key')
     try:
         res = iot_controller.location_create(company_key, location_name, location_country, location_city, location_meta)
-        return jsonify({"Company key": company_key})
+        return jsonify(res)
 
     except:
         return Response("{'a':'b'}", status=400, mimetype='application/json')
@@ -134,6 +134,7 @@ def get_one_location():
 @app.route('/editLocation', methods=["PUT"])
 def edit_location():
     data = request.get_json()
+    old_name = data.get('old_name')
     location_name = data.get('location_name')
     location_country = data.get('location_country')
     location_city = data.get('location_city')
@@ -142,7 +143,7 @@ def edit_location():
         return jsonify({'message': 'Necesitas iniciar sesión'})
     company_key = request.args.get('key')
     data = request.get_json()
-    edited = iot_controller.edit_location(company_key, location_name, location_country, location_city, location_meta)
+    edited = iot_controller.edit_location(company_key, old_name,location_name, location_country, location_city, location_meta)
     return jsonify(edited)
 
 #Delete location
@@ -153,8 +154,8 @@ def delete_location():
     company_key = request.args.get('key')
     data = request.get_json()
     delete = data.get('location_name')
-    iot_controller.del_location(delete, company_key)
-    return jsonify({"Company id": "borrado"})
+    deleted = iot_controller.del_location(delete, company_key)
+    return jsonify(deleted)
 
 ###################
 
@@ -226,8 +227,9 @@ def delete_sensor():
     company_key = request.args.get('key')
     data = request.get_json()
     sensor_id = data.get('sensor_id')
-    iot_controller.del_sensor(sensor_id, company_key)
-    return jsonify({"Sensor": "borrado"})
+    borrado = iot_controller.del_sensor(sensor_id, company_key)
+    print(borrado)
+    return jsonify(borrado)
 
 ##Sensor data
 
@@ -239,7 +241,7 @@ def post_sensor_data_temper():
     epoch_time = int(time.time())
     jsonData = json.dumps(data)
     sensors = iot_controller.post_sensor(sensor_api_key, jsonData, epoch_time)
-    return jsonify(sensors)
+    return sensors
 
 ### Get data
 @app.route('/api/v1/sensor_data', methods=["GET"])
@@ -250,3 +252,7 @@ def get_sensor_data():
     sensor_id = request.args.get('sensor_id')
     sensors = iot_controller.get_sensor(company_key, from_time, to_time, eval(sensor_id) )
     return jsonify(sensors)
+
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0')
