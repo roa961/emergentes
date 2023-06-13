@@ -15,13 +15,12 @@ def create_tables():
 )
 """,
 """CREATE TABLE IF NOT EXISTS company (
-    ID INT,
+    ID INTEGER PRIMARY KEY AUTOINCREMENT,
     company_name STRING,
-    company_api_key STRING
-)"""
+    company_api_key STRING)"""
 ,
 """CREATE TABLE IF NOT EXISTS location(
-    ID INT,
+    ID INTEGER PRIMARY KEY AUTOINCREMENT,
     company_id int,
     location_name STRING,
     location_country STRING,
@@ -32,7 +31,7 @@ def create_tables():
 ,
 """CREATE TABLE IF NOT EXISTS sensor(
     location_id int,
-    sensor_id int,
+    sensor_ID INTEGER PRIMARY KEY AUTOINCREMENT,
     sensor_name string,
     sensor_category string,
     sensor_meta string,
@@ -43,6 +42,7 @@ def create_tables():
 """CREATE TABLE IF NOT EXISTS sensor_data(
     sensor_api_key string,
     json_data text,
+    time string,
     foreign key(sensor_api_key) references sensor(sensor_api_key)
 )"""
 
